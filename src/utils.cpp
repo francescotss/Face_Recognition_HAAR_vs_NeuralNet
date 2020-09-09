@@ -1,23 +1,4 @@
-#include "facerec.h"
-
-
-#ifdef __cpp_lib_filesystem
-    #include <filesystem>
-    namespace fs = std::filesystem;
-#else#ifdef __cpp_lib_filesystem
-#include <filesystem>
-    using fs = std::filesystem;
-#elif __cpp_lib_experimental_filesystem
-    #include <experimental/filesystem>
-    using fs = std::experimental::filesystem;
-#else
-    #error "no filesystem support ='("
-#endif
-    #include <experimental/filesystem>
-    namespace fs = std::experimental::filesystem;
-#endif
-
-using namespace std;
+#include "utils.h"
 
 set<string> img_extentions({".jpg",".jpeg",".png",".pgm"});
 
@@ -96,11 +77,4 @@ void create_csv(const string& dir, const string& train_name, const string& test_
         closedir(group_dir);
     }
     closedir(root);
-}
-
-int main(int argc, const char* argv[]) {
-    cout << "reading directory " << STD_DIR << "..." << endl;
-    create_csv(STD_DIR,STD_TRAIN_CSV,STD_TEST_CSV);
-    cout << "done" << endl;
-    return 0;
 }
