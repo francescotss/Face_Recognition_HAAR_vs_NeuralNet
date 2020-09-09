@@ -7,9 +7,14 @@
 #include <dirent.h>
 #include <set>
 
-#include <opencv2/core/core.hpp>
+#include "opencv2/core.hpp"
+#include "opencv2/highgui.hpp"
+#include "opencv2/face.hpp"
+#include "opencv2/imgproc.hpp"
 
 #define DEBUG true
 using namespace std;
+using namespace cv;
+using namespace cv::face;
 
 #endif //OPENCV_COMMONS_H
