@@ -1,17 +1,11 @@
 #include "utils.h"
 
-set<string> img_extentions({".jpg",".jpeg",".png",".pgm"});
-
 void handle_error(const string& msg){
     cerr << msg << endl << strerror(errno) << endl;
     exit(EXIT_FAILURE);
 }
 
-bool is_picture(const string& path){
-    //string ext = fs::path(path).extension();
-    //return img_extentions.count(ext);
-    return true;
-}
+
 
 void create_csv(const string& dir, const string& train_name, const string& test_name){
     DIR* root = opendir(dir.c_str());
@@ -63,8 +57,6 @@ void create_csv(const string& dir, const string& train_name, const string& test_
                 if (DEBUG) cerr << "------>" << entry_name << endl;
 
                 string path = dir+"/"+group_dir_name+"/"+entry_dir_name+"/"+entry_name;
-                if (!is_picture(path))
-                    continue;
 
                 out_file << path << ";" << entry_dir_name.substr(1) << endl;
 

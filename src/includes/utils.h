@@ -13,8 +13,8 @@ namespace fs = std::filesystem;
 #elif __cpp_lib_experimental_filesystem
 #include <experimental/filesystem>
     namespace fs = std::experimental::filesystem;
-//#else
- //   #error "no filesystem support"
+#else
+    #error "no filesystem support"
 #endif
 
 
