@@ -1,7 +1,5 @@
 #include "dataset.h"
 
-vector<string> img_paths;
-
 
 set<string> img_extentions({".jpg",".jpeg",".png",".pgm"});
 
@@ -10,13 +8,13 @@ bool is_picture(const fs::path& path){
     return img_extentions.count(ext);
 }
 
-void read_dir(const string& in_path, int min_images){
+void read_dir(const string& in_path,vector<string>& img_paths,  int min_images){
 
     if (DEBUG) cerr << "Reading dir " << in_path <<endl;
     vector<string> temp_paths;
     for (const auto& entry : fs::directory_iterator(in_path)){
         if (entry.is_directory())
-            read_dir(entry.path(),min_images);
+            read_dir(entry.path(),img_paths,min_images);
         if (entry.is_regular_file() && is_picture(entry.path()))
             temp_paths.push_back(entry.path());
     }
@@ -41,7 +39,7 @@ void write_to_path(Mat& img,const string& in_path, const string& out_path, const
 }
 
 
-void detect_faces(const string& in_path, const string& out_path, const string& face_model_path){
+void detect_faces(const string& in_path, const string& out_path, const string& face_model_path, vector<string>& img_paths){
     CascadeClassifier classifier;
     classifier.load(face_model_path);
     long int total = img_paths.size();
@@ -79,16 +77,57 @@ void detect_faces(const string& in_path, const string& out_path, const string& f
 }
 
 
-void create_dataset(const string& in_path, const string& out_path, const string& face_model_path, int min_images){
+void create_dataset(const string& in_dir_path, const string& out_dir_path, const string& face_model_path, int min_images){
 
-    cout << "Reading directory " << in_path << endl;
-    read_dir(in_path,min_images);
+    vector<string> img_paths;
+
+    cout << "Reading directory " << in_dir_path << endl;
+    read_dir(in_dir_path,img_paths,min_images);
     cout << format("%lu images founded. (%d minimum images per person)", img_paths.size(),min_images) << endl;
 
-    cout << "Detecting faces and saving in " << out_path << endl;
+    cout << "Detecting faces and saving in " << out_dir_path << endl;
     cout << "(can take a while...)" << endl;
-    detect_faces(in_path,out_path,face_model_path);
+    detect_faces(in_dir_path,out_dir_path,face_model_path,img_paths);
     cout << "Done" << endl;
+
+}
+
+void create_csv(const string& in_dir_path,const string& out_dir_path, int img_for_training){
+    vector<string> img_paths;
+    ofstream train_csv;
+    ofstream test_csv;
+
+    cout << "Reading directory " << in_dir_path << endl;
+    read_dir(in_dir_path,img_paths,img_for_training);
+    cout << format("%lu images founded. (using %d images per person)", img_paths.size(),img_for_training) << endl;
+
+    train_csv.open(out_dir_path+"/train.csv",ios::out | ios::trunc);
+    test_csv.open(out_dir_path+"/test.csv",ios::out | ios::trunc);
+    if (!train_csv.is_open() || !test_csv.is_open())
+        fatal_error("Error creating database config");
+
+    int id = 0, count = 0;
+
+    string last_read = "";
+
+    for (const auto& img_path : img_paths){
+        string parent_dir = img_path.substr(0,img_path.rfind('/'));
+        if(parent_dir != last_read) {
+            last_read = parent_dir;
+            id++;
+            count = 0;
+        }
+
+        if (DEBUG) cerr << format("Adding to the database: [ID] %d [Path] %s", id, img_path.c_str()) << endl;
+        if (count < img_for_training)
+            train_csv << img_path << ";" << id << endl;
+        else
+            test_csv << img_path << ";" << id << endl;
+        count++;
+    }
+
+    train_csv.close();
+    test_csv.close();
 
 }
 

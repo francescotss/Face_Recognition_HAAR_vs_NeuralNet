@@ -10,5 +10,5 @@ set(OpenCV_LIBS opencv_core opencv_imgproc opencv_highgui opencv_imgcodecs openc
 
 include_directories(src/includes)
 
-add_executable(facerec src/main.cpp src/utils.cpp src/includes/commons.h src/recognizer.cpp src/includes/recognizer.h src/dataset.cpp src/includes/dataset.h)
+add_executable(facerec src/main.cpp src/includes/commons.h src/recognizer.cpp src/includes/recognizer.h src/dataset.cpp src/includes/dataset.h)
 target_link_libraries(facerec ${OpenCV_LIBS})

@@ -2,15 +2,16 @@
 
 int main(int argc, const char* argv[]) {
 
-    create_dataset(STD_DIR,"../out",STD_DETECTION_MODEL,10);
+    //create_dataset(STD_DATA_IN_DIR,STD_FACES_DIR,STD_DETECTION_MODEL_PATH,10);
+    create_csv(STD_FACES_DIR,STD_CONFIG_DIR,8);
+    train_test_recognizer(STD_CONFIG_DIR,STD_RECOGNITION_MODEL_PATH);
 
     return 0;
 
-    cout << "reading directory " << STD_DIR << " ...";
-    create_csv(STD_DIR,STD_TRAIN_CSV,STD_TEST_CSV);
-    cout << "done" << endl;
+    //cout << "reading directory " << STD_IN_DIR << " ...";
+    //create_csv(STD_IN_DIR,STD_TRAIN_CSV,STD_TEST_CSV);
+    //cout << "done" << endl;
 
-    train_recognizer(STD_TRAIN_CSV,STD_MODEL);
-    test_recognizer(STD_TEST_CSV,STD_MODEL);
+
     return 0;
 }

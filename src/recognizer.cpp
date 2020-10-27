@@ -39,7 +39,7 @@ void train_recognizer(const string& csv_path, const string& model_path){
     cout << "Loading train dataset... ";
 
     if (!load_from_csv(csv_path,images,labels))
-        handle_error("Recognizer module: error loading csv");
+        fatal_error("Recognizer module: error loading csv");
 
     cout << "Training... ";
     Ptr<FisherFaceRecognizer> model = FisherFaceRecognizer::create();
@@ -60,7 +60,7 @@ void test_recognizer(const string& csv_path, const string& model_path){
     cout << "Loading test dataset... ";
 
     if (!load_from_csv(csv_path,images,labels))
-        handle_error("Recognizer module: error loading csv");
+        fatal_error("Recognizer module: error loading csv");
 
     cout << "Testing... " << endl;
 
@@ -75,5 +75,9 @@ void test_recognizer(const string& csv_path, const string& model_path){
     float precision = (float) correct / (float) i;
     cout << format("Precision: %f (%d samples, %d correct predictions)",precision,i,correct) << endl;
 
+}
 
+void train_test_recognizer(const string& config_dir_path, const string& model_path){
+    train_recognizer(config_dir_path+"/train.csv",model_path);
+    test_recognizer(config_dir_path+"/test.csv",model_path);
 }
