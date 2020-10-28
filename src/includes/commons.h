@@ -12,7 +12,7 @@
 #include "opencv2/face.hpp"
 #include "opencv2/imgproc.hpp"
 
-#define DEBUG true
+#define DEBUG false
 using namespace std;
 using namespace cv;
 using namespace cv::face;

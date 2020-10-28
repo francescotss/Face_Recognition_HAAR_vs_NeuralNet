@@ -17,7 +17,7 @@ bool load_from_csv(const string& csv_path, vector<Mat>& images, vector<int>& lab
         if(img_path.empty() || img_label.empty())
             continue;
 
-        images.push_back(imread(img_path, 0));
+        images.push_back(imread(img_path, IMREAD_GRAYSCALE));
         labels.push_back(stoi(img_label));
     }
 

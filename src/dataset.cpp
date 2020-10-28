@@ -25,7 +25,7 @@ void read_dir(const string& in_path,vector<string>& img_paths,  int min_images){
     }
 }
 
-//TODO
+
 void write_to_path(Mat& img,const string& in_path, const string& out_path, const string& img_path){
     string local_img_path = img_path.substr(in_path.size());
     string final_path = out_path + local_img_path;
@@ -35,23 +35,29 @@ void write_to_path(Mat& img,const string& in_path, const string& out_path, const
     fs::create_directories(final_path.substr(0,final_path.rfind('/')));
     imwrite(final_path, img);
 
+}
+
+void resize_image(Mat& src,Mat& dst, short width, short height){
 
 }
 
-
-void detect_faces(const string& in_path, const string& out_path, const string& face_model_path, vector<string>& img_paths){
+/*
+ * Analizza le foto e trova un volto per ogni foto
+ *
+ */
+void detect_faces(const string& in_path, const string& out_path, const string& face_model_path, vector<string>& img_paths, short width, short height){
     CascadeClassifier classifier;
     classifier.load(face_model_path);
     long int total = img_paths.size();
     long int done = 0;
-    short int steps = 1;
+    short int steps = 1; //Step percentuali da mostrare a schermo in decimi
 
     for(const auto& img_path : img_paths){
         Mat img;
         Mat gray;
         Mat out;
         vector<Rect> faces;
-        img = imread(img_path);
+        img = imread(img_path,IMREAD_UNCHANGED);
 
         if (DEBUG) cerr << img_path << " loaded" << endl;
 
@@ -64,10 +70,10 @@ void detect_faces(const string& in_path, const string& out_path, const string& f
         classifier.detectMultiScale(gray,faces);
 
         if (!faces.empty()){
-            out = img(faces[0]);
+            cv::resize(img(faces[0]),out,cv::Size(width,height));
             write_to_path(out,in_path,out_path,img_path);
         }
-
+        //Calcolo percentuale del lavoro totale compiuto da mostrare a schermo
         if (done++ > ((total/10) * steps)){
             cout << steps*10 << "%...";
             steps++;
@@ -77,7 +83,7 @@ void detect_faces(const string& in_path, const string& out_path, const string& f
 }
 
 
-void create_dataset(const string& in_dir_path, const string& out_dir_path, const string& face_model_path, int min_images){
+void create_dataset(const string& in_dir_path, const string& out_dir_path, const string& face_model_path, int min_images,short width, short height){
 
     vector<string> img_paths;
 
@@ -87,7 +93,7 @@ void create_dataset(const string& in_dir_path, const string& out_dir_path, const
 
     cout << "Detecting faces and saving in " << out_dir_path << endl;
     cout << "(can take a while...)" << endl;
-    detect_faces(in_dir_path,out_dir_path,face_model_path,img_paths);
+    detect_faces(in_dir_path,out_dir_path,face_model_path,img_paths,width,height);
     cout << "Done" << endl;
 
 }
@@ -108,7 +114,7 @@ void create_csv(const string& in_dir_path,const string& out_dir_path, int img_fo
 
     int id = 0, count = 0;
 
-    string last_read = "";
+    string last_read;
 
     for (const auto& img_path : img_paths){
         string parent_dir = img_path.substr(0,img_path.rfind('/'));
@@ -126,8 +132,9 @@ void create_csv(const string& in_dir_path,const string& out_dir_path, int img_fo
         count++;
     }
 
+    cout << format("%d people founded",id) << endl;
+
     train_csv.close();
     test_csv.close();
-
 }
 
