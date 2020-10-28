@@ -8,10 +8,5 @@ int main(int argc, const char* argv[]) {
 
     return 0;
 
-    //cout << "reading directory " << STD_IN_DIR << " ...";
-    //create_csv(STD_IN_DIR,STD_TRAIN_CSV,STD_TEST_CSV);
-    //cout << "done" << endl;
-
-
     return 0;
 }
