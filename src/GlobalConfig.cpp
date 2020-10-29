@@ -1,41 +1,49 @@
 #include "GlobalConfig.h"
 
-GlobalConfig::GlobalConfig() {
-    init();
-}
+GlobalConfig* GlobalConfig::instance = nullptr;
 
-GlobalConfig::GlobalConfig(const string &config_path) {
-    path = config_path;
-    init();
-}
+GlobalConfig::GlobalConfig() = default;
 
-void GlobalConfig::init() {
+
+
+void GlobalConfig::init(const string &config_path) {
+
+    if (instance == nullptr)
+        instance = new GlobalConfig();
+    else
+        instance->data.clear();
+
+
     ifstream file;
-    file.open(path);
+    file.open(config_path);
     if (!file.is_open())
         fatal_error("Configuration file not found");
 
     string line;
     while (getline(file,line)){
-        if (line[0] == '#')
+        if (line[0] == '#' || line[0] == '\n')
             continue;
 
         string key = line.substr(0,line.find('='));
         string value = line.substr(line.find('=')+1);
-        data.insert({ key, value });
+        instance->data.insert({ key, value });
     }
 
     file.close();
 }
 
+
 string GlobalConfig::get_string(const string &key) {
-    return data.find(key)->second;
+    return instance->data.find(key)->second;
 }
 
 int GlobalConfig::get_value(const string &key) {
-    string temp = data.find(key)->second;
+    string temp = instance->data.find(key)->second;
     return atoi(temp.c_str());
 }
+
+
+
 
 
 

@@ -32,9 +32,11 @@ bool load_from_csv(const string& csv_path, vector<Mat>& images, vector<int>& lab
 
 }
 
-void train_recognizer(const string& csv_path, const string& model_path){
+void train_recognizer(){
     vector<Mat> images;
     vector<int> labels;
+    string csv_path = GlobalConfig::get_string("TRAINING_CSV");
+    string model_path = GlobalConfig::get_string("FACE_RECOGNITION_MODEL");
 
     cout << "Loading train dataset... ";
 
@@ -53,9 +55,11 @@ void train_recognizer(const string& csv_path, const string& model_path){
 
 }
 
-void test_recognizer(const string& csv_path, const string& model_path){
+void test_recognizer(){
     vector<Mat> images;
     vector<int> labels;
+    string csv_path = GlobalConfig::get_string("TESTING_CSV");
+    string model_path = GlobalConfig::get_string("FACE_RECOGNITION_MODEL");
 
     cout << "Loading test dataset... ";
 
@@ -77,7 +81,7 @@ void test_recognizer(const string& csv_path, const string& model_path){
 
 }
 
-void train_test_recognizer(const string& config_dir_path, const string& model_path){
-    train_recognizer(config_dir_path+"/train.csv",model_path);
-    test_recognizer(config_dir_path+"/test.csv",model_path);
+void train_test_recognizer(){
+    train_recognizer();
+    test_recognizer();
 }

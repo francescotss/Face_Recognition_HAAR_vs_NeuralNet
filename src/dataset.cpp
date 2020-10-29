@@ -8,9 +8,9 @@ bool is_picture(const fs::path& path){
     return img_extentions.count(ext);
 }
 
-void read_dir(const string& in_path,vector<string>& img_paths,  int min_images){
-
+void read_dir(const string& in_path, vector<string>& img_paths,  short min_images){
     if (DEBUG) cerr << "Reading dir " << in_path <<endl;
+
     vector<string> temp_paths;
     for (const auto& entry : fs::directory_iterator(in_path)){
         if (entry.is_directory())
@@ -26,7 +26,9 @@ void read_dir(const string& in_path,vector<string>& img_paths,  int min_images){
 }
 
 
-void write_to_path(Mat& img,const string& in_path, const string& out_path, const string& img_path){
+void write_to_path(Mat& img, const string& img_path){
+    string in_path = GlobalConfig::get_string("IMAGES_DIR");
+    string out_path = GlobalConfig::get_string("FACES_DIR");
     string local_img_path = img_path.substr(in_path.size());
     string final_path = out_path + local_img_path;
 
@@ -37,20 +39,19 @@ void write_to_path(Mat& img,const string& in_path, const string& out_path, const
 
 }
 
-void resize_image(Mat& src,Mat& dst, short width, short height){
-
-}
 
 /*
  * Analizza le foto e trova un volto per ogni foto
  *
  */
-void detect_faces(const string& in_path, const string& out_path, const string& face_model_path, vector<string>& img_paths, short width, short height){
+void detect_faces(vector<string>& img_paths, short width, short height){
+    string face_model_path = GlobalConfig::get_string("FACE_DETECTION_MODEL");
     CascadeClassifier classifier;
-    classifier.load(face_model_path);
     long int total = img_paths.size();
     long int done = 0;
     short int steps = 1; //Step percentuali da mostrare a schermo in decimi
+
+    classifier.load(face_model_path);
 
     for(const auto& img_path : img_paths){
         Mat img;
@@ -71,7 +72,7 @@ void detect_faces(const string& in_path, const string& out_path, const string& f
 
         if (!faces.empty()){
             cv::resize(img(faces[0]),out,cv::Size(width,height));
-            write_to_path(out,in_path,out_path,img_path);
+            write_to_path(out,img_path);
         }
         //Calcolo percentuale del lavoro totale compiuto da mostrare a schermo
         if (done++ > ((total/10) * steps)){
@@ -83,32 +84,41 @@ void detect_faces(const string& in_path, const string& out_path, const string& f
 }
 
 
-void create_dataset(const string& in_dir_path, const string& out_dir_path, const string& face_model_path, int min_images,short width, short height){
+void create_dataset(){
 
     vector<string> img_paths;
+    string images_path = GlobalConfig::get_string("IMAGES_DIR");
+    short min_images = GlobalConfig::get_value("MIN_FACES");
+    short width = GlobalConfig::get_value("WIDTH");
+    short height = GlobalConfig::get_value("HEIGHT");
 
-    cout << "Reading directory " << in_dir_path << endl;
-    read_dir(in_dir_path,img_paths,min_images);
-    cout << format("%lu images founded. (%d minimum images per person)", img_paths.size(),min_images) << endl;
+    read_dir(images_path,img_paths,min_images);
 
-    cout << "Detecting faces and saving in " << out_dir_path << endl;
-    cout << "(can take a while...)" << endl;
-    detect_faces(in_dir_path,out_dir_path,face_model_path,img_paths,width,height);
+    cout << format("%lu images founded in %s (%d minimum images per person)", img_paths.size(), images_path.c_str(), min_images) << endl;
+    cout << "Detecting faces and saving in " << GlobalConfig::get_string("FACES_DIR") << endl;
+    cout << "(can take a while...)" << endl << "0%...";
+
+
+    detect_faces(img_paths,width,height);
+
     cout << "Done" << endl;
 
 }
 
-void create_csv(const string& in_dir_path,const string& out_dir_path, int img_for_training){
+void create_csv(short img_for_training){
     vector<string> img_paths;
     ofstream train_csv;
     ofstream test_csv;
+    string faces_path = GlobalConfig::get_string("FACES_DIR");
+    string training_csv = GlobalConfig::get_string("TRAINING_CSV");
+    string testing_csv = GlobalConfig::get_string("TESTING_CSV");
 
-    cout << "Reading directory " << in_dir_path << endl;
-    read_dir(in_dir_path,img_paths,img_for_training);
-    cout << format("%lu images founded. (using %d images per person)", img_paths.size(),img_for_training) << endl;
+    read_dir(faces_path,img_paths,img_for_training);
+    cout << format("%lu images founded in %s (%d minimum images per person)", img_paths.size(), faces_path.c_str(), img_for_training) << endl;
 
-    train_csv.open(out_dir_path+"/train.csv",ios::out | ios::trunc);
-    test_csv.open(out_dir_path+"/test.csv",ios::out | ios::trunc);
+
+    train_csv.open(training_csv,ios::out | ios::trunc);
+    test_csv.open(testing_csv,ios::out | ios::trunc);
     if (!train_csv.is_open() || !test_csv.is_open())
         fatal_error("Error creating database config");
 
