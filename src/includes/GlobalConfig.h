@@ -16,6 +16,7 @@ public:
     static void init(const string& config_path = "../config/config.cfg");
     static string get_string(const string& key);
     static int get_value(const string& key);
+    static float get_float(const string& key);
 };
 
 

@@ -39,8 +39,15 @@ string GlobalConfig::get_string(const string &key) {
 
 int GlobalConfig::get_value(const string &key) {
     string temp = instance->data.find(key)->second;
-    return atoi(temp.c_str());
+    return stoi(temp);
 }
+
+float GlobalConfig::get_float(const string &key) {
+    string temp = instance->data.find(key)->second;
+    return stod(temp);
+}
+
+
 
 
 

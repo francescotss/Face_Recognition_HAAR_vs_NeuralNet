@@ -112,6 +112,7 @@ void create_csv(short img_for_training){
     string faces_path = GlobalConfig::get_string("FACES_DIR");
     string training_csv = GlobalConfig::get_string("TRAINING_CSV");
     string testing_csv = GlobalConfig::get_string("TESTING_CSV");
+    float training_percentage = GlobalConfig::get_float("TRAINING_PERCENTAGE");
 
     read_dir(faces_path,img_paths,img_for_training);
     cout << format("%lu images founded in %s (%d minimum images per person)", img_paths.size(), faces_path.c_str(), img_for_training) << endl;
@@ -125,21 +126,49 @@ void create_csv(short img_for_training){
     int id = 0, count = 0;
 
     string last_read;
-
+    vector<string> temp;
     for (const auto& img_path : img_paths){
         string parent_dir = img_path.substr(0,img_path.rfind('/'));
         if(parent_dir != last_read) {
             last_read = parent_dir;
+
+
+            int added = 0;
+            int limit = (float) count * training_percentage;
+            for (const auto& path_to_add : temp){
+                if (added < limit)
+                    train_csv << path_to_add << ";" << id << endl;
+                else
+                    test_csv << path_to_add << ";" << id << endl;
+                added++;
+
+                if (DEBUG) cerr << format("Added to db: [ID] %d [Path] %s", id, path_to_add.c_str()) << endl;
+            }
+
+            temp.clear();
             id++;
             count = 0;
         }
 
         if (DEBUG) cerr << format("Adding to the database: [ID] %d [Path] %s", id, img_path.c_str()) << endl;
-        if (count < img_for_training)
-            train_csv << img_path << ";" << id << endl;
-        else
-            test_csv << img_path << ";" << id << endl;
+        temp.push_back(img_path);
         count++;
+    }
+
+    if (!temp.empty()){
+        int added = 0;
+        int limit = (float) count * training_percentage;
+        for (const auto& path_to_add : temp){
+            if (added < limit)
+                train_csv << path_to_add << ";" << id << endl;
+            else
+                test_csv << path_to_add << ";" << id << endl;
+            added++;
+
+            if (DEBUG) cerr << format("Added to db: [ID] %d [Path] %s", id, path_to_add.c_str()) << endl;
+        }
+
+        temp.clear();
     }
 
     cout << format("%d people founded",id) << endl;
