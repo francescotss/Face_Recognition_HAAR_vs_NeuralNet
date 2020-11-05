@@ -123,7 +123,7 @@ void create_csv(short img_for_training){
     if (!train_csv.is_open() || !test_csv.is_open())
         fatal_error("Error creating database config");
 
-    int id = 0, count = 0;
+    int id = -1, count = 0;
 
     string last_read;
     vector<string> temp;
@@ -171,7 +171,7 @@ void create_csv(short img_for_training){
         temp.clear();
     }
 
-    cout << format("%d people founded",id) << endl;
+    cout << format("%d people founded",id+1) << endl;
 
     train_csv.close();
     test_csv.close();

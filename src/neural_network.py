@@ -4,13 +4,24 @@ from tensorflow.python.data.ops.dataset_ops import AUTOTUNE
 from tensorflow.keras import layers
 from tensorflow.keras import Sequential
 from tensorflow.keras import applications
+from tensorflow.keras import models
 
 import os
+import argparse
+import json
+import codecs
 
 os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
-
 config = {}
 IMG_SHAPE = (224, 224, 3)
+
+
+def init_arg_parser():
+    parser = argparse.ArgumentParser(description="Neural Network for face recognition")
+    parser.add_argument('--classes', type=int, default=13)
+    parser.add_argument('--test', action='store_true')
+    parser.add_argument('--train', action='store_true')
+    return parser.parse_args()
 
 
 def read_config():
@@ -20,6 +31,17 @@ def read_config():
             continue
         key, value = line.split("=")
         config[key] = value.rstrip()
+
+    try:
+        train_csv = open(config["TRAINING_CSV"], 'r')
+        max_class = train_csv.readlines()[-1].split(";")[-1]
+    except:
+        print("Training csv file not found. Did you create the dataset?")
+        exit(1)
+
+    file.close()
+    train_csv.close()
+    return int(max_class) + 1
 
 
 def load_data(category):
@@ -65,7 +87,7 @@ def preprocess_data(dataset, augment=False):
     return dataset
 
 
-def get_model():
+def create_model():
     base_model = applications.MobileNetV2(input_shape=IMG_SHAPE,
                                           include_top=False,
                                           weights='imagenet')
@@ -76,7 +98,7 @@ def get_model():
         layers.GlobalAveragePooling2D(),
         layers.Dense(1024, activation='relu'),
         layers.Dense(512, activation='relu'),
-        layers.Dense(13, activation='softmax')  # 5
+        layers.Dense(classes, activation='softmax')
     ])
 
     model.compile(optimizer='adam',
@@ -88,18 +110,13 @@ def get_model():
     return model
 
 
-def main():
-    read_config()
+def train_model():
     train_ds = load_data("TRAINING_CSV")
     val_ds = load_data("TESTING_CSV")
     train_ds = preprocess_data(train_ds, True)
     val_ds = preprocess_data(val_ds, False)
 
-    for img, label in train_ds.take(1):
-        print("Shape: ", img.numpy().shape)
-        print("Labels: ", label.numpy())
-
-    model = get_model()
+    model = create_model()
 
     epochs = int(config["EPOCH"])
     history = model.fit(
@@ -108,9 +125,49 @@ def main():
         epochs=epochs
     )
 
-    loss, acc = model.evaluate(val_ds)
-    print("Loss", loss, "Acc", acc)
+    model.save(config["NEURAL_FACE_RECOGNITION_MODEL"])
+    print("\nModel saved!")
+
+    with open(config["NEURAL_HISTORY"], 'w') as file:
+        json.dump(history.history, file)
+
+    return model
+
+
+def test_model(model):
+    if model == 0:
+        # Accuracy 0 due to tensorflow bug #42459
+        print("\nLoading model")
+        model = models.load_model(config["NEURAL_FACE_RECOGNITION_MODEL"])
+
+    val_ds = load_data("TESTING_CSV")
+    val_ds = preprocess_data(val_ds, False)
+
+    print("General evaluation")
+    model.evaluate(val_ds)
+
+    results = model.predict(val_ds, verbose=0)
+
+    json.dump(results.tolist(),
+              codecs.open(config["NEURAL_PREDICT"], 'w', encoding='utf-8'),
+              separators=(',', ':'),
+              sort_keys=True,
+              indent=4
+              )
+
+
+def main():
     return
 
+
+args = init_arg_parser()
+classes = read_config()
+trained_model = 0
+
+if args.train:
+    trained_model = train_model()
+
+if args.test:
+    test_model(trained_model)
 
 main()
