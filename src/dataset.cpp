@@ -2,10 +2,31 @@
 
 
 set<string> img_extentions({".jpg",".jpeg",".png",".pgm"});
+map<int,string> names;
 
 bool is_picture(const fs::path& path){
     string ext = path.extension();
     return img_extentions.count(ext);
+}
+
+void set_names(){
+    string names_path = GlobalConfig::get_string("LABELS_CSV");
+    ifstream file(names_path, ifstream::in);
+
+    names.clear();
+
+    string line, label, name;
+    while (getline(file,line)){
+        label = line.substr(0, line.find(';'));
+        name = line.substr(line.find(';')+1);
+        names.insert({stoi(label), name});
+    }
+}
+
+string get_name(int label){
+    if (names.empty())
+        set_names();
+    return names.find(label)->second;
 }
 
 void read_dir(const string& in_path, vector<string>& img_paths,  short min_images){
@@ -53,6 +74,7 @@ void detect_faces(vector<string>& img_paths, short width, short height){
 
     classifier.load(face_model_path);
 
+    double start = getTickCount();
     for(const auto& img_path : img_paths){
         Mat img;
         Mat gray;
@@ -81,6 +103,8 @@ void detect_faces(vector<string>& img_paths, short width, short height){
             flush(cout);
         }
     }
+    double stop = getTickCount();
+    double time = (stop - start)/getTickFrequency();
 }
 
 
@@ -109,9 +133,11 @@ void create_csv(short img_for_training){
     vector<string> img_paths;
     ofstream train_csv;
     ofstream test_csv;
+    ofstream label_csv;
     string faces_path = GlobalConfig::get_string("FACES_DIR");
     string training_csv = GlobalConfig::get_string("TRAINING_CSV");
     string testing_csv = GlobalConfig::get_string("TESTING_CSV");
+    string labels_csv = GlobalConfig::get_string("LABELS_CSV");
     float training_percentage = GlobalConfig::get_float("TRAINING_PERCENTAGE");
 
     read_dir(faces_path,img_paths,img_for_training);
@@ -120,6 +146,7 @@ void create_csv(short img_for_training){
 
     train_csv.open(training_csv,ios::out | ios::trunc);
     test_csv.open(testing_csv,ios::out | ios::trunc);
+    label_csv.open(labels_csv, ios::out | ios::trunc);
     if (!train_csv.is_open() || !test_csv.is_open())
         fatal_error("Error creating database config");
 
@@ -129,9 +156,10 @@ void create_csv(short img_for_training){
     vector<string> temp;
     for (const auto& img_path : img_paths){
         string parent_dir = img_path.substr(0,img_path.rfind('/'));
+        string face_name = parent_dir.substr(parent_dir.rfind('/')+1);
+
         if(parent_dir != last_read) {
             last_read = parent_dir;
-
 
             int added = 0;
             int limit = (float) count * training_percentage;
@@ -148,6 +176,8 @@ void create_csv(short img_for_training){
             temp.clear();
             id++;
             count = 0;
+
+            label_csv << id << ";" << face_name << endl;
         }
 
         if (DEBUG) cerr << format("Adding to the database: [ID] %d [Path] %s", id, img_path.c_str()) << endl;
@@ -171,6 +201,8 @@ void create_csv(short img_for_training){
         temp.clear();
     }
 
+
+    set_names();
     cout << format("%d people founded",id+1) << endl;
 
     train_csv.close();

@@ -1,10 +1,16 @@
 import tensorflow as tf
 
+tf.get_logger().setLevel('ERROR')
+
+import numpy as np
+
 from tensorflow.python.data.ops.dataset_ops import AUTOTUNE
 from tensorflow.keras import layers
 from tensorflow.keras import Sequential
 from tensorflow.keras import applications
 from tensorflow.keras import models
+
+from datetime import datetime
 
 import os
 import argparse
@@ -13,6 +19,7 @@ import codecs
 
 os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 config = {}
+names = []
 IMG_SHAPE = (224, 224, 3)
 
 
@@ -38,6 +45,11 @@ def read_config():
     except:
         print("Training csv file not found. Did you create the dataset?")
         exit(1)
+
+    with open(config["LABELS_CSV"], 'r') as labels_file:
+        for line in labels_file:
+            label, name = line.split(";")
+            names.insert(int(label), name)
 
     file.close()
     train_csv.close()
@@ -122,7 +134,8 @@ def train_model():
     history = model.fit(
         train_ds,
         validation_data=val_ds,
-        epochs=epochs
+        epochs=epochs,
+        callbacks=[tensorboard_callback]
     )
 
     model.save(config["NEURAL_FACE_RECOGNITION_MODEL"])
@@ -144,9 +157,29 @@ def test_model(model):
     val_ds = preprocess_data(val_ds, False)
 
     print("General evaluation")
-    model.evaluate(val_ds)
+    model.evaluate(val_ds,
+                   callbacks=[tensorboard_callback]
+                   )
 
     results = model.predict(val_ds, verbose=0)
+
+    image_dim = int(config["WIDTH"])
+    correct = 0
+    wrong = 0
+    with file_writer.as_default():
+        for images, labels in val_ds:
+            for i in range(images.shape[0]):
+                name = names[labels[i]]
+                predict_name = names[np.argmax(results[i])]
+                image = np.reshape(images[i], (-1, image_dim, image_dim, 3))
+                tf.summary.image(str(i) + " Name: " + name + " Predict: " + predict_name, image, max_outputs=25, step=0)
+                if name == predict_name:
+                    correct += 1
+                else:
+                    wrong += 1
+
+    print("Total: ", correct+wrong, "Correct: ", correct)
+    print("Accuracy: ", correct/(correct+wrong))
 
     json.dump(results.tolist(),
               codecs.open(config["NEURAL_PREDICT"], 'w', encoding='utf-8'),
@@ -156,18 +189,16 @@ def test_model(model):
               )
 
 
-def main():
-    return
-
-
 args = init_arg_parser()
 classes = read_config()
-trained_model = 0
 
+logdir = config["TENSOR_LOG"] + "/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+file_writer = tf.summary.create_file_writer(logdir)
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1, profile_batch='5,10')
+
+trained_model = 0
 if args.train:
     trained_model = train_model()
 
 if args.test:
     test_model(trained_model)
-
-main()

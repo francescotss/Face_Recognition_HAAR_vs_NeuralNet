@@ -14,7 +14,9 @@ namespace fs = std::filesystem;
     #error "no filesystem support: abort"
 #endif
 
+
 void create_dataset();
 void create_csv(short img_for_training);
+string get_name(int label);
 
 #endif //OPENCV_DATASET_H

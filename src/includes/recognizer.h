@@ -3,6 +3,7 @@
 
 #include "commons.h"
 #include "GlobalConfig.h"
+#include "dataset.h"
 
 void train_recognizer();
 void test_recognizer();

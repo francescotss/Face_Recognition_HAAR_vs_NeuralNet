@@ -12,6 +12,7 @@ numpy = "*"
 matplotlib = "*"
 plaidml-keras = "*"
 keras = "*"
+tensorboard-plugin-profile = "*"
 
 [requires]
 python_version = "3.7"
