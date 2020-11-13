@@ -164,19 +164,26 @@ def test_model(model):
     results = model.predict(val_ds, verbose=0)
 
     image_dim = int(config["WIDTH"])
+    std_batch_size = int(config["BATCH_SIZE"])
     correct = 0
     wrong = 0
+    batch_count = 0
     with file_writer.as_default():
         for images, labels in val_ds:
-            for i in range(images.shape[0]):
+            batch_size = images.shape[0]
+
+            for i in range(batch_size):
                 name = names[labels[i]]
-                predict_name = names[np.argmax(results[i])]
+                predict_name = names[np.argmax(results[ i + (std_batch_size * batch_count) ])]
                 image = np.reshape(images[i], (-1, image_dim, image_dim, 3))
                 tf.summary.image(str(i) + " Name: " + name + " Predict: " + predict_name, image, max_outputs=25, step=0)
+
                 if name == predict_name:
                     correct += 1
                 else:
                     wrong += 1
+
+            batch_count += 1
 
     print("Total: ", correct+wrong, "Correct: ", correct)
     print("Accuracy: ", correct/(correct+wrong))

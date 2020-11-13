@@ -105,6 +105,8 @@ void detect_faces(vector<string>& img_paths, short width, short height){
     }
     double stop = getTickCount();
     double time = (stop - start)/getTickFrequency();
+
+    cout << "Time: " << time << endl;
 }
 
 
